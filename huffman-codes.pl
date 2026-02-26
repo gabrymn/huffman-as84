@@ -209,10 +209,13 @@ sort_elements(Elements, Sorted) :-
 %	MessageBit: 	Int
 %	CompressionBit: Int
 %	Save: 			Double
+%	SBs:			sb(Char, Bool[])[]
+%	Bits:			Char[]
 %-------------------------------------------------------------------------------
-hucodec_performance(Message, MessageBit, CompressionBit, Save) :-
+hucodec_performance(Message, MessageBit, CompressionBit, Save, SBs, Bits) :-
 	hucodec_generate_sw(Message, SWs, 0),
 	hucodec_generate_ht(SWs, HT),
+	hucodec_generate_sb(HT, SBs),
 	hucodec_encode(Message, HT, Bits),
 	get_chars(Message, MessageChars, 0),
 	length(MessageChars, MessageByte),
