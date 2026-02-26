@@ -19,7 +19,7 @@ hucodec_encode(Message, HT, Bits) :-
 hucodec_encode_file(Filename, HT, Bits) :-
 	string(Filename),
 	get_chars(Filename, Chars, 1),
-	hucodec_generate_symbol_bits_table(HT, SBs),	
+	hucodec_generate_sb(HT, SBs),	
 	encode(Chars, SBs, Bits).
 
 encode([], _, []).
