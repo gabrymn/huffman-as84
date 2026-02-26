@@ -4,9 +4,53 @@ program1(File) :-
 	hucodec_generate_sw(File, SWs, 1),
 	hucodec_generate_huffman_tree(SWs, HT),
 	hucodec_print_ht(HT).
+
+program2(Msg, Bits, SBs, Save) :-
+	hucodec_generate_sw(Msg, SWs, 0),
+	hucodec_generate_huffman_tree(SWs, HT),
+	huffman_encode(Msg, HT, Bits),
+	hucodec_print_ht(HT),
+	hucodec_generate_symbol_bits_table(HT, SBs),
+	length(Bits, Len),
+	get_chars(Msg, Chars, 0),
+	length(Chars, NByte0),
+	NByte1 is (Len + 7) // 8,
+	Save is ((NByte0 - NByte1) / NByte0) * 100.
+
 %-------------------------------------------------------------------------------	
 
 
+% Codifica partando da un messaggio di testo o dal contenuto di un file
+%-------------------------------------------------------------------------------
+huffman_encode(Message, Ht, Bits) :-
+	string(Message),
+	hucodec_generate_symbol_bits_table(Ht, SBs),	
+	get_chars(Message, Chars, 0),
+	encode(Chars, SBs, Bits).
+	
+huffman_encode_file(Filename, Ht, Bits) :-
+	string(Filename),
+	get_chars(Filename, Chars, 1),
+	hucodec_generate_symbol_bits_table(Ht, SBs),	
+	encode(Chars, SBs, Bits).
+
+encode([], _, []).
+encode([S|Tail], SBs, Bits) :-
+	encode_sym(S, SBs, SymbolBits),
+	encode(Tail, SBs, RestBits),
+	join(SymbolBits, RestBits, Bits),
+	% join([SymbolBits], RestBits, Bits), <- debug
+	% join(SymbolBits, RestBits, Bits), <- ¬debug
+	!.
+	
+encode_sym(S, [sb(S, Bits)|_], Bits) :- !.
+
+encode_sym(S, [sb(Ss, _)|T], Bits) :-
+	S \= Ss,
+	encode_sym(S, T, Bits).
+%-------------------------------------------------------------------------------
+	
+	
 % Insieme di funzionalità per generare una lista di coppie simbolo-frequenza
 % L = { sw(S,W) : S è un simbolo, W è un peso come frequenza}
 % il punto di partenza è una lista di char o di byte, entrambi si possono
@@ -25,8 +69,8 @@ get_chars(Str, Chars, 0) :-
 	string_chars(Str, Chars),
 	!.
 
-get_chars(FilePath, Chars, 1) :- 
-	read_file(FilePath, Str), 
+get_chars(Filepath, Chars, 1) :- 
+	read_file(Filepath, Str), 
 	get_chars(Str, Chars, 0).
 
 get_bytes(Str, Bytes, 0) :-
