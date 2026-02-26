@@ -5,7 +5,7 @@ program1(File) :-
 	hucodec_generate_huffman_tree(SWs, HT),
 	hucodec_print_ht(HT).
 
-program2(Msg, Bits, SBs, Save) :-
+program2(Msg, Bits, HT, Save, SBs) :-
 	hucodec_generate_sw(Msg, SWs, 0),
 	hucodec_generate_huffman_tree(SWs, HT),
 	huffman_encode(Msg, HT, Bits),
@@ -18,20 +18,26 @@ program2(Msg, Bits, SBs, Save) :-
 	Save is ((NByte0 - NByte1) / NByte0) * 100.
 
 %-------------------------------------------------------------------------------	
-
-
-% Codifica partando da un messaggio di testo o dal contenuto di un file
+	
+	
+% Codifica partando da un messaggio di testo o dal contenuto di un file, che
+% viene interpretato come una stringa
+% Specifica tipi:
+% 	Message:  String
+%   Filename: String
+%   HT:       BinaryTree
+%   Bits:     Bool[]
 %-------------------------------------------------------------------------------
-huffman_encode(Message, Ht, Bits) :-
+huffman_encode(Message, HT, Bits) :-
 	string(Message),
-	hucodec_generate_symbol_bits_table(Ht, SBs),	
+	hucodec_generate_symbol_bits_table(HT, SBs),	
 	get_chars(Message, Chars, 0),
 	encode(Chars, SBs, Bits).
 	
-huffman_encode_file(Filename, Ht, Bits) :-
+huffman_encode_file(Filename, HT, Bits) :-
 	string(Filename),
 	get_chars(Filename, Chars, 1),
-	hucodec_generate_symbol_bits_table(Ht, SBs),	
+	hucodec_generate_symbol_bits_table(HT, SBs),	
 	encode(Chars, SBs, Bits).
 
 encode([], _, []).
@@ -49,12 +55,43 @@ encode_sym(S, [sb(Ss, _)|T], Bits) :-
 	S \= Ss,
 	encode_sym(S, T, Bits).
 %-------------------------------------------------------------------------------
+
+
+% Decodifica
+% Specifica tipi:
+% 	Bits:     Bool[]
+%   HT:       BinaryTree
+%   Message:  String
+%-------------------------------------------------------------------------------
+huffman_decode([], _, []).
+huffman_decode(Bits, HT, Message) :-
+	decode(Bits, HT, Symbols),
+	string_chars(Message, Symbols).
+
+decode([], _, []).
+decode(Bits, HT, [Symbol|Symbols]) :-
+	decode_sym(Bits, SubBits, HT, Symbol),
+	decode(SubBits, HT, Symbols).
+
+decode_sym(SubBits, SubBits, leaf(Symbol, _), Symbol).
+
+decode_sym([0|Bs], SubBits, node(L, _, _), Symbol) :-
+	decode_sym(Bs, SubBits, L, Symbol).
+
+decode_sym([1|Bs], SubBits, node(_, R, _), Symbol) :-
+	decode_sym(Bs, SubBits, R, Symbol).
+%-------------------------------------------------------------------------------
 	
 	
 % Insieme di funzionalità per generare una lista di coppie simbolo-frequenza
 % L = { sw(S,W) : S è un simbolo, W è un peso come frequenza}
 % il punto di partenza è una lista di char o di byte, entrambi si possono
 % ottenere da una stringa in input o dal contenuto di un file.
+%
+% Specifica tipi:
+%	StrOrPath: String
+%	SWs:       sw(Char, Int)[]
+%	FileBool:  Bool
 %-------------------------------------------------------------------------------
 hucodec_generate_sw(StrOrPath, SWs, FileBool) :-
 	get_chars(StrOrPath, Chars, FileBool),
@@ -113,12 +150,19 @@ read_stream_bytes(Stream, [B|Rest]) :-
 
 % Partendo da un albero di huffman genera una lista d {sb(S,B)} dove S è
 % un simbolo e B è una sequenza di bit
+%
+% Specifica tipi:
+%	SBs: sb(Char, Bool[])[]
 %-------------------------------------------------------------------------------
-hucodec_generate_symbol_bits_table(node(L, R, _), SBs) :-
+hucodec_generate_sb(node(L, R, _), SBs) :-
 	visit_ht(node(L, R, _), [], SBs).
 
-visit_ht(leaf(S, _), Bits, [sb(S,Bits)]).
-
+visit_ht(leaf(S, _), Bits, [sb(S,ReverseBits)]) :-
+	reverse(Bits, ReverseBits).
+	% dato che nel caso ricorsivo stiamo aggiungendo bit
+	% all'inizio (prolog) della lista alla fine bisogna invertire 
+	% la lista per ottenere la giusta codifica
+	
 visit_ht(node(L, R, _), Bits, SBs) :-
 	visit_ht(L, [0|Bits], SBs_left),
 	visit_ht(R, [1|Bits], SBs_right),
@@ -133,6 +177,8 @@ join([H|T], L, [H|Tr]) :-
 
 % Creazione dell'albero di huffman a partire da una lista di {sw(S,W)} con
 % tutte le utils necessarie
+%	SWs: sw(Char, Int)[]
+%	HT:  BinaryTree
 %-------------------------------------------------------------------------------
 hucodec_generate_huffman_tree(SWs, HT) :-
 	init_tree(SWs, LFs),
@@ -173,9 +219,10 @@ sort_elements(Elements, Sorted) :-
 
 
 % Print huffman tree
+%	HT: BinaryTree
 %-------------------------------------------------------------------------------
-hucodec_print_ht(Tree) :-
-    hucodec_print_ht(Tree, "", true).
+hucodec_print_ht(HT) :-
+    hucodec_print_ht(HT, "", true).
 
 hucodec_print_ht(leaf(Sym,W), Prefix, IsLast) :-
     branch(Prefix, IsLast, LinePrefix),
