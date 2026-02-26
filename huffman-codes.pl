@@ -1,6 +1,7 @@
-		
+
 % Codifica partando da un messaggio di testo o dal contenuto di un file, che
 % viene interpretato come una stringa
+%
 % Specifica tipi:
 % 	Message:  String
 %   Filename: String
@@ -37,6 +38,7 @@ encode_sym(S, [sb(Ss, _)|T], Bits) :-
 
 
 % Decodifica
+%
 % Specifica tipi:
 % 	Bits:     Bool[]
 %   HT:       BinaryTree
@@ -156,6 +158,8 @@ join([H|T], L, [H|Tr]) :-
 
 % Creazione dell'albero di huffman a partire da una lista di {sw(S,W)} con
 % tutte le utils necessarie
+%
+% Specifica tipi:
 %	SWs: sw(Char, Int)[]
 %	HT:  BinaryTree
 %-------------------------------------------------------------------------------
@@ -168,13 +172,13 @@ init_ht([sw(S,W)|T1], [leaf(S,W)|T2]) :-
 	init_ht(T1, T2).
 
 build_ht([], []).
-build_ht([Tree], Tree).	
-build_ht(NL, Tree) :-
+build_ht([HT], HT).	
+build_ht(NL, HT) :-
 	sort_elements(NL, [E1,E2|Tail]),
 	weight(E1, W1),
 	weight(E2, W2),
 	W3 is W1+W2,
-	build_tree([node(E2, E1, W3) | Tail], Tree).
+	build_ht([node(E2, E1, W3) | Tail], HT).
 	
 weight(leaf(_, W), W).
 weight(node(_, _, W), W).
@@ -196,9 +200,29 @@ sort_elements(Elements, Sorted) :-
 %-------------------------------------------------------------------------------
 
 
+% Indica la % di bit risparmiati
+%
+% Specifica tipi:
+%	Message: 		String
+%	MessageBit: 	Int
+%	CompressionBit: Int
+%	Save: 			Double
+%-------------------------------------------------------------------------------
+hucodec_performance(Message, MessageBit, CompressionBit, Save) :-
+	hucodec_generate_sw(Message, SWs, 0),
+	hucodec_generate_ht(SWs, HT),
+	hucodec_encode(Message, HT, Bits),
+	get_chars(Message, MessageChars, 0),
+	length(MessageChars, MessageByte),
+	MessageBit is MessageByte * 8,
+	length(Bits, CompressionBit),
+	Save is ((MessageBit - CompressionBit) / MessageBit) * 100.
+%-------------------------------------------------------------------------------
+
 
 % Print huffman tree
-% SPecifica tipi:
+% Specifica tipi:
+%
 %	HT: BinaryTree
 %-------------------------------------------------------------------------------
 hucodec_print_ht(HT) :-
@@ -232,7 +256,6 @@ print_children([C1,C2|Rest], Prefix) :-
 %-------------------------------------------------------------------------------
 
 
-
 % Generic Utils
 %-------------------------------------------------------------------------------
 
@@ -246,7 +269,5 @@ listlen([_|T], N) :-
 	listlen(T, Ns),
 	N is Ns+1.	
 %-------------------------------------------------------------------------------
-
-
 
 	
