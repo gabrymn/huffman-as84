@@ -1,5 +1,5 @@
 
-% Codifica partando da un messaggio di testo o dal contenuto di un file, che
+% Codifica partendo da un messaggio di testo o dal contenuto di un file, che
 % viene interpretato come una stringa
 %
 % Specifica tipi:
