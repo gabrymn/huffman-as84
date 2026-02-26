@@ -7,13 +7,13 @@
 %   HT:       BinaryTree
 %   Bits:     Bool[]
 %-------------------------------------------------------------------------------
-huffman_encode(Message, HT, Bits) :-
+hucodec_encode(Message, HT, Bits) :-
 	string(Message),
-	hucodec_generate_symbol_bits_table(HT, SBs),	
+	hucodec_generate_sb(HT, SBs),	
 	get_chars(Message, Chars, 0),
 	encode(Chars, SBs, Bits).
 	
-huffman_encode_file(Filename, HT, Bits) :-
+hucodec_encode_file(Filename, HT, Bits) :-
 	string(Filename),
 	get_chars(Filename, Chars, 1),
 	hucodec_generate_symbol_bits_table(HT, SBs),	
@@ -42,8 +42,8 @@ encode_sym(S, [sb(Ss, _)|T], Bits) :-
 %   HT:       BinaryTree
 %   Message:  String
 %-------------------------------------------------------------------------------
-huffman_decode([], _, []).
-huffman_decode(Bits, HT, Message) :-
+hucodec_decode([], _, []).
+hucodec_decode(Bits, HT, Message) :-
 	decode(Bits, HT, Symbols),
 	string_chars(Message, Symbols).
 
@@ -159,17 +159,17 @@ join([H|T], L, [H|Tr]) :-
 %	SWs: sw(Char, Int)[]
 %	HT:  BinaryTree
 %-------------------------------------------------------------------------------
-hucodec_generate_huffman_tree(SWs, HT) :-
-	init_tree(SWs, LFs),
-	build_tree(LFs, HT).
+hucodec_generate_ht(SWs, HT) :-
+	init_ht(SWs, LFs),
+	build_ht(LFs, HT).
 	
-init_tree([], []).
-init_tree([sw(S,W)|T1], [leaf(S,W)|T2]) :-
-	init_tree(T1, T2).
+init_ht([], []).
+init_ht([sw(S,W)|T1], [leaf(S,W)|T2]) :-
+	init_ht(T1, T2).
 
-build_tree([], []).
-build_tree([Tree], Tree).	
-build_tree(NL, Tree) :-
+build_ht([], []).
+build_ht([Tree], Tree).	
+build_ht(NL, Tree) :-
 	sort_elements(NL, [E1,E2|Tail]),
 	weight(E1, W1),
 	weight(E2, W2),
