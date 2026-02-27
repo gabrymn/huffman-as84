@@ -9,6 +9,9 @@
 %   Filename: String
 %   HT:       BinaryTree
 %   Bits:     Bool[]
+%
+% hucodec_encode(+Message, +HT, -Bits)
+% hucodec_encode_file(+Filename, +HT, -Bits).
 %-------------------------------------------------------------------------------
 hucodec_encode(Message, HT, Bits) :-
 	string(Message),
@@ -45,6 +48,8 @@ encode_sym(S, [sb(Ss, _)|T], Bits) :-
 % 	Bits:     Bool[]
 %   HT:       BinaryTree
 %   Message:  String
+%
+% hucodec_decode(+Bits, +HT, -Message).
 %-------------------------------------------------------------------------------
 hucodec_decode([], _, []).
 hucodec_decode(Bits, HT, Message) :-
@@ -75,6 +80,8 @@ decode_sym([1|Bs], SubBits, node(_, R, _), Symbol) :-
 %	StrOrPath: String
 %	SWs:       sw(Char, Int)[]
 %	FileBool:  Bool
+%
+% hucodec_generate_sw(+StrOrPath, -SWs, +FileBool)
 %-------------------------------------------------------------------------------
 hucodec_generate_sw(StrOrPath, SWs, FileBool) :-
 	get_chars(StrOrPath, Chars, FileBool),
@@ -136,6 +143,8 @@ read_stream_bytes(Stream, [B|Rest]) :-
 %
 % Specifica tipi:
 %	SBs: sb(Char, Bool[])[]
+%
+% hucodec_generate_sb(+node(L, R, _), -SBs)
 %-------------------------------------------------------------------------------
 hucodec_generate_sb(node(L, R, _), SBs) :-
 	visit_ht(node(L, R, _), [], SBs).
@@ -164,6 +173,8 @@ join([H|T], L, [H|Tr]) :-
 % Specifica tipi:
 %	SWs: sw(Char, Int)[]
 %	HT:  BinaryTree
+%
+% hucodec_generate_ht(+SWs, -HT)
 %-------------------------------------------------------------------------------
 hucodec_generate_ht(SWs, HT) :-
 	init_ht(SWs, LFs),
@@ -211,6 +222,8 @@ sort_elements(Elements, Sorted) :-
 %	Save: 			Double
 %	SBs:			sb(Char, Bool[])[]
 %	Bits:			Char[]
+%
+% hucodec_performance(+Message, -*)
 %-------------------------------------------------------------------------------
 hucodec_performance(Message, MessageBit, CompressionBit, Save, SBs, Bits) :-
 	hucodec_generate_sw(Message, SWs, 0),
